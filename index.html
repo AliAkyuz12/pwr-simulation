@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWR Working Principle with Parameters</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        #container {
+            width: 900px;
+            height: 600px;
+            margin: 0 auto;
+            position: relative;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .component {
+            stroke: #000;
+            stroke-width: 2;
+        }
+        
+        .pipe {
+            fill: none;
+            stroke: #333;
+            stroke-width: 3;
+        }
+        
+        .arrow {
+            fill: none;
+            stroke-width: 3;
+            marker-end: url(#arrowhead);
+        }
+        
+        .primary-arrow {
+            stroke: #0074D9;
+        }
+        
+        .secondary-arrow {
+            stroke: #FF4136;
+        }
+        
+        .cooling-arrow {
+            stroke: #2ECC40;
+        }
+        
+        .particle {
+            r: 4;
+        }
+        
+        .primary-particle {
+            fill: #0074D9;
+        }
+        
+        .secondary-particle {
+            fill: #FF4136;
+        }
+        
+        .cooling-particle {
+            fill: #2ECC40;
+        }
+        
+        .highlight {
+            stroke: #FF851B;
+            stroke-width: 3;
+        }
+        
+        .label {
+            font-size: 12px;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .parameter-box {
+            fill: rgba(255, 255, 255, 0.8);
+            stroke: #ccc;
+            stroke-width: 1;
+            rx: 5;
+            ry: 5;
+        }
+        
+        .parameter-text {
+            font-size: 10px;
+            fill: #333;
+        }
+        
+        #controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        #step-info {
+            margin: 20px auto;
+            width: 80%;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        #step-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        #step-description {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <svg id="pwr-svg" viewBox="0 0 900 600">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" />
+                </marker>
+            </defs>
+            
+            <!-- Components -->
+            <rect id="reactor" class="component" x="100" y="200" width="100" height="200" fill="#b3c6ff" />
+            <rect id="pressurizer" class="component" x="100" y="100" width="60" height="80" fill="#ffe066" />
+            <rect id="steam-generator" class="component" x="300" y="150" width="100" height="250" fill="#ffe066" />
+            <rect id="turbine" class="component" x="500" y="200" width="150" height="100" fill="#b2f2a5" />
+            <circle id="generator" class="component" cx="700" cy="250" r="50" fill="#cccccc" />
+            <rect id="condenser" class="component" x="500" y="400" width="150" height="80" fill="#b3e0ff" />
+            <path id="cooling-tower" class="component" d="M750,400 L800,400 L820,500 L730,500 Z" fill="#e0e0e0" />
+            
+            <!-- Pipes -->
+            <path id="primary-hot-pipe" class="pipe" d="M200,250 L300,250" />
+            <path id="primary-cold-pipe" class="pipe" d="M300,350 L200,350" />
+            <path id="primary-down-pipe" class="pipe" d="M150,350 C120,350 120,400 150,400" />
+            <path id="primary-up-pipe" class="pipe" d="M150,400 C180,400 180,350 150,350" />
+            <path id="steam-pipe" class="pipe" d="M400,180 L500,180" />
+            <path id="turbine-to-generator-pipe" class="pipe" d="M650,250 L650,250" />
+            <path id="turbine-to-condenser-pipe" class="pipe" d="M575,300 L575,400" />
+            <path id="condenser-to-sg-pipe" class="pipe" d="M500,440 L350,440 L350,400" />
+            <path id="cooling-in-pipe" class="pipe" d="M650,440 L750,440" />
+            <path id="cooling-out-pipe" class="pipe" d="M750,480 L650,480" />
+            
+            <!-- Arrows (initially hidden) -->
+            <path id="primary-hot-arrow" class="arrow primary-arrow" d="M200,250 L280,250" style="display: none;" />
+            <path id="primary-cold-arrow" class="arrow primary-arrow" d="M300,350 L220,350" style="display: none;" />
+            <path id="steam-arrow" class="arrow secondary-arrow" d="M400,180 L480,180" style="display: none;" />
+            <path id="turbine-to-generator-arrow" class="arrow secondary-arrow" d="M650,250 L680,250" style="display: none;" />
+            <path id="turbine-to-condenser-arrow" class="arrow secondary-arrow" d="M575,300 L575,380" style="display: none;" />
+            <path id="condenser-to-sg-arrow" class="arrow secondary-arrow" d="M500,440 L400,440" style="display: none;" />
+            <path id="cooling-in-arrow" class="arrow cooling-arrow" d="M650,440 L730,440" style="display: none;" />
+            <path id="cooling-out-arrow" class="arrow cooling-arrow" d="M750,480 L670,480" style="display: none;" />
+            
+            <!-- Particles (will be added dynamically) -->
+            <g id="primary-particles"></g>
+            <g id="secondary-particles"></g>
+            <g id="cooling-particles"></g>
+            
+            <!-- Labels -->
+            <text class="label" x="150" y="180">Reactor</text>
+            <text class="label" x="130" y="90">Pressurizer</text>
+            <text class="label" x="350" y="130">Steam Generator</text>
+            <text class="label" x="575" y="180">Turbine</text>
+            <text class="label" x="700" y="180">Generator</text>
+            <text class="label" x="575" y="500">Condenser</text>
+            <text class="label" x="775" y="520">Cooling Tower</text>
+            
+            <!-- Parameter boxes (will be shown/hidden based on step) -->
+            <g id="parameter-boxes"></g>
+        </svg>
+    </div>
+    
+    <div id="step-info">
+        <div id="step-title">Step 1: Nuclear Fission & Heat Generation</div>
+        <div id="step-description">
+            In the Reactor Pressure Vessel, nuclear fission of uranium fuel rods produces a large amount of heat. 
+            This heat is transferred to the water in the primary loop.
+        </div>
+    </div>
+    
+    <div id="controls">
+        <button id="prev-btn" disabled>Previous</button>
+        <button id="play-btn">Play</button>
+        <button id="next-btn">Next</button>
+    </div>
+    
+    <script>
+        // Animation variables
+        let currentStep = 0;
+        let isPlaying = false;
+        let animationInterval;
+        
+        // Typical values for pressure, temperature, flow rate, and efficiency
+        const typicalValues = {
+            reactor_pressure: '155 bar',
+            reactor_temp_in: '290°C',
+            reactor_temp_out: '325°C',
+            reactor_flow: '15,000 kg/s',
+            reactor_power: '3,000 MW (thermal)',
+            pressurizer_pressure: '155 bar',
+            pressurizer_temp: '345°C',
+            sg_primary_pressure: '155 bar',
+            sg_primary_temp_in: '325°C',
+            sg_primary_temp_out: '290°C',
+            sg_secondary_pressure: '70 bar',
+            sg_secondary_temp_in: '230°C',
+            sg_secondary_temp_out: '280°C',
+            sg_flow: '2,000 kg/s',
+            turbine_pressure_in: '70 bar',
+            turbine_pressure_out: '0.05 bar',
+            turbine_temp_in: '280°C',
+            turbine_temp_out: '33°C',
+            turbine_efficiency: '90%',
+            generator_output: '1,000 MW',
+            generator_efficiency: '98%',
+            condenser_pressure: '0.05 bar',
+            condenser_temp: '33°C',
+            cooling_flow: '45,000 kg/s',
+            cooling_temp_in: '20°C',
+            cooling_temp_out: '30°C',
+            overall_efficiency: '33-36%'
+        };
+        
+        // Parameter annotations for each step
+        const parameterAnnotations = {
+            0: [  // Step 1: Reactor
+                {text: `P: ${typicalValues.reactor_pressure}`, x: 150, y: 250},
+                {text: `T: ${typicalValues.reactor_temp_out}`, x: 150, y: 270},
+                {text: `Power: ${typicalValues.reactor_power}`, x: 150, y: 290}
+            ],
+            1: [  // Step 2: Primary Loop
+                {text: `P: ${typicalValues.reactor_pressure}`, x: 150, y: 250},
+                {text: `T: ${typicalValues.reactor_temp_out}`, x: 150, y: 270},
+                {text: `Flow: ${typicalValues.reactor_flow}`, x: 250, y: 230},
+                {text: `P: ${typicalValues.pressurizer_pressure}`, x: 130, y: 120},
+                {text: `T: ${typicalValues.pressurizer_temp}`, x: 130, y: 140}
+            ],
+            2: [  // Step 3: Steam Generator
+                {text: `Primary P: ${typicalValues.sg_primary_pressure}`, x: 350, y: 250},
+                {text: `Primary T in: ${typicalValues.sg_primary_temp_in}`, x: 350, y: 270},
+                {text: `Primary T out: ${typicalValues.sg_primary_temp_out}`, x: 350, y: 290},
+                {text: `Secondary P: ${typicalValues.sg_secondary_pressure}`, x: 350, y: 180},
+                {text: `Secondary T out: ${typicalValues.sg_secondary_temp_out}`, x: 350, y: 200},
+                {text: `Steam flow: ${typicalValues.sg_flow}`, x: 450, y: 160}
+            ],
+            3: [  // Step 4: Primary Loop Circulation
+                {text: `P: ${typicalValues.reactor_pressure}`, x: 150, y: 250},
+                {text: `T in: ${typicalValues.reactor_temp_in}`, x: 150, y: 270},
+                {text: `T out: ${typicalValues.reactor_temp_out}`, x: 150, y: 290},
+                {text: `Flow: ${typicalValues.reactor_flow}`, x: 250, y: 370}
+            ],
+            4: [  // Step 5: Turbine and Generator
+                {text: `P in: ${typicalValues.turbine_pressure_in}`, x: 500, y: 220},
+                {text: `T in: ${typicalValues.turbine_temp_in}`, x: 500, y: 240},
+                {text: `P out: ${typicalValues.turbine_pressure_out}`, x: 650, y: 220},
+                {text: `Efficiency: ${typicalValues.turbine_efficiency}`, x: 575, y: 280},
+                {text: `Output: ${typicalValues.generator_output}`, x: 700, y: 230},
+                {text: `Efficiency: ${typicalValues.generator_efficiency}`, x: 700, y: 250}
+            ],
+            5: [  // Step 6: Condenser
+                {text: `P: ${typicalValues.condenser_pressure}`, x: 575, y: 420},
+                {text: `T: ${typicalValues.condenser_temp}`, x: 575, y: 440},
+                {text: `Flow: ${typicalValues.sg_flow}`, x: 500, y: 460}
+            ],
+            6: [  // Step 7: Cooling System
+                {text: `Flow: ${typicalValues.cooling_flow}`, x: 700, y: 440},
+                {text: `T in: ${typicalValues.cooling_temp_in}`, x: 775, y: 460},
+                {text: `T out: ${typicalValues.cooling_temp_out}`, x: 775, y: 480}
+            ],
+            7: [  // Step 8: Complete System
+                {text: `Thermal power: 3,000 MW`, x: 150, y: 420},
+                {text: `Electrical output: ${typicalValues.generator_output}`, x: 700, y: 320},
+                {text: `Overall efficiency: ${typicalValues.overall_efficiency}`, x: 450, y: 100}
+            ]
+        };
+        
+        // Particle paths
+        const paths = {
+            primary: [
+                {x: 150, y: 250}, {x: 200, y: 250}, {x: 300, y: 250}, 
+                {x: 350, y: 300}, {x: 300, y: 350}, {x: 200, y: 350}, 
+                {x: 150, y: 350}, {x: 120, y: 375}, {x: 150, y: 400}, 
+                {x: 180, y: 375}, {x: 150, y: 350}
+            ],
+            secondary: [
+                {x: 350, y: 180}, {x: 400, y: 180}, {x: 500, y: 180}, 
+                {x: 575, y: 200}, {x: 650, y: 250}, {x: 700, y: 250}, 
+                {x: 575, y: 300}, {x: 575, y: 400}, {x: 500, y: 440}, 
+                {x: 350, y: 440}, {x: 350, y: 400}, {x: 350, y: 300}
+            ],
+            cooling: [
+                {x: 650, y: 440}, {x: 750, y: 440}, {x: 775, y: 460}, 
+                {x: 750, y: 480}, {x: 650, y: 480}, {x: 625, y: 460}, 
+                {x: 650, y: 440}
+            ]
+        };
+        
+        // Particles
+        const particles = {
+            primary: [],
+            secondary: [],
+            cooling: []
+        };
+        
+        // Create particles
+        function createParticles() {
+            // Clear existing particles
+            document.getElementById('primary-particles').innerHTML = '';
+            document.getElementById('secondary-particles').innerHTML = '';
+            document.getElementById('cooling-particles').innerHTML = '';
+            
+            particles.primary = [];
+            particles.secondary = [];
+            particles.cooling = [];
+            
+            // Create primary particles
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                particle.setAttribute("class", "particle primary-particle");
+                document.getElementById('primary-particles').appendChild(particle);
+                particles.primary.push({
+                    element: particle,
+                    position: i / 10,
+                    speed: 0.005 + Math.random() * 0.002
+                });
+            }
+            
+            // Create secondary particles
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                particle.setAttribute("class", "particle secondary-particle");
+                document.getElementById('secondary-particles').appendChild(particle);
+                particles.secondary.push({
+                    element: particle,
+                    position: i / 15,
+                    speed: 0.004 + Math.random() * 0.002
+                });
+            }
+            
+            // Create cooling particles
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                particle.setAttribute("class", "particle cooling-particle");
+                document.getElementById('cooling-particles').appendChild(particle);
+                particles.cooling.push({
+                    element: particle,
+                    position: i / 8,
+                    speed: 0.006 + Math.random() * 0.002
+                });
+            }
+        }
+        
+        // Update particle positions
+        function updateParticles() {
+            // Update primary particles
+            if (activeFlows.includes('primary')) {
+                for (const particle of particles.primary) {
+                    particle.position += particle.speed;
+                    if (particle.position >= 1) {
+                        particle.position -= 1;
+                    }
+                    
+                    const pathPos = particle.position * (paths.primary.length - 1);
+                    const index = Math.floor(pathPos);
+                    const nextIndex = (index + 1) % paths.primary.length;
+                    const fraction = pathPos - index;
+                    
+                    const x = paths.primary[index].x * (1 - fraction) + paths.primary[nextIndex].x * fraction;
+                    const y = paths.primary[index].y * (1 - fraction) + paths.primary[nextIndex].y * fraction;
+                    
+                    particle.element.setAttribute("cx", x);
+                    particle.element.setAttribute("cy", y);
+                }
+            }
+            
+            // Update secondary particles
+            if (activeFlows.includes('secondary')) {
+                for (const particle of particles.secondary) {
+                    particle.position += particle.speed;
+                    if (particle.position >= 1) {
+                        particle.position -= 1;
+                    }
+                    
+                    const pathPos = particle.position * (paths.secondary.length - 1);
+                    const index = Math.floor(pathPos);
+                    const nextIndex = (index + 1) % paths.secondary.length;
+                    const fraction = pathPos - index;
+                    
+                    const x = paths.secondary[index].x * (1 - fraction) + paths.secondary[nextIndex].x * fraction;
+                    const y = paths.secondary[index].y * (1 - fraction) + paths.secondary[nextIndex].y * fraction;
+                    
+                    particle.element.setAttribute("cx", x);
+                    particle.element.setAttribute("cy", y);
+                }
+            }
+            
+            // Update cooling particles
+            if (activeFlows.includes('cooling')) {
+                for (const particle of particles.cooling) {
+                    particle.position += particle.speed;
+                    if (particle.position >= 1) {
+                        particle.position -= 1;
+                    }
+                    
+                    const pathPos = particle.position * (paths.cooling.length - 1);
+                    const index = Math.floor(pathPos);
+                    const nextIndex = (index + 1) % paths.cooling.length;
+                    const fraction = pathPos - index;
+                    
+                    const x = paths.cooling[index].x * (1 - fraction) + paths.cooling[nextIndex].x * fraction;
+                    const y = paths.cooling[index].y * (1 - fraction) + paths.cooling[nextIndex].y * fraction;
+                    
+                    particle.element.setAttribute("cx", x);
+                    particle.element.setAttribute("cy", y);
+                }
+            }
+        }
+        
+        // Function to create parameter boxes
+        function createParameterBoxes(annotations) {
+            const parameterBoxesGroup = document.getElementById('parameter-boxes');
+            parameterBoxesGroup.innerHTML = '';
+            
+            annotations.forEach(annotation => {
+                // Create background box
+                const boxWidth = annotation.text.length * 6 + 10;
+                const boxHeight = 20;
+                
+                const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                box.setAttribute("class", "parameter-box");
+                box.setAttribute("x", annotation.x - boxWidth / 2);
+                box.setAttribute("y", annotation.y - boxHeight / 2);
+                box.setAttribute("width", boxWidth);
+                box.setAttribute("height", boxHeight);
+                parameterBoxesGroup.appendChild(box);
+                
+                // Create text
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("class", "parameter-text");
+                text.setAttribute("x", annotation.x);
+                text.setAttribute("y", annotation.y + 4);
+                text.setAttribute("text-anchor", "middle");
+                text.textContent = annotation.text;
+                parameterBoxesGroup.appendChild(text);
+            });
+        }
+        
+        // Animation steps
+        const steps = [
+            {
+                title: "Step 1: Nuclear Fission & Heat Generation",
+                description: "In the Reactor Pressure Vessel, nuclear fission of uranium fuel rods produces a large amount of heat. This heat is transferred to the water in the primary loop.",
+                highlight: ["reactor"],
+                flows: [],
+                arrows: []
+            },
+            {
+                title: "Step 2: Primary Loop - Hot Pressurized Water",
+                description: "The primary loop water, kept under high pressure by the Pressurizer, absorbs heat from the reactor core. This hot, pressurized water flows to the Steam Generator.",
+                highlight: ["reactor", "pressurizer", "steam-generator"],
+                flows: ["primary"],
+                arrows: ["primary-hot-arrow"]
+            },
+            {
+                title: "Step 3: Steam Generation (Heat Exchanger)",
+                description: "In the Steam Generator, the hot primary water transfers its heat to the secondary loop water. The primary and secondary waters never mix. The secondary water turns into steam.",
+                highlight: ["steam-generator"],
+                flows: ["primary", "secondary"],
+                arrows: ["steam-arrow"]
+            },
+            {
+                title: "Step 4: Primary Loop Circulation",
+                description: "The cooled primary water is pumped back to the reactor, completing the primary loop. The Pressurizer keeps the water from boiling.",
+                highlight: ["reactor", "pressurizer"],
+                flows: ["primary"],
+                arrows: ["primary-cold-arrow"]
+            },
+            {
+                title: "Step 5: Secondary Loop - Steam to Turbine",
+                description: "The steam flows through the Turbine, causing it to spin. The turbine is connected to the Generator, which produces electricity.",
+                highlight: ["steam-generator", "turbine", "generator"],
+                flows: ["secondary"],
+                arrows: ["steam-arrow", "turbine-to-generator-arrow"]
+            },
+            {
+                title: "Step 6: Condensation & Cooling",
+                description: "After passing through the turbine, the steam enters the Condenser, where it is cooled and condensed back into water. The water is then pumped back to the steam generator, completing the secondary loop.",
+                highlight: ["condenser"],
+                flows: ["secondary"],
+                arrows: ["turbine-to-condenser-arrow", "condenser-to-sg-arrow"]
+            },
+            {
+                title: "Step 7: Cooling System",
+                description: "The condenser releases the absorbed heat to the environment, usually via a Cooling Tower or a water source. The cooling water circulates between the condenser and the cooling tower.",
+                highlight: ["condenser", "cooling-tower"],
+                flows: ["cooling"],
+                arrows: ["cooling-in-arrow", "cooling-out-arrow"]
+            },
+            {
+                title: "Complete PWR System",
+                description: "The complete PWR system consists of three separate water loops: the primary loop (blue) that transfers heat from the reactor, the secondary loop (red) that generates electricity, and the cooling loop (green) that removes waste heat.",
+                highlight: ["reactor", "pressurizer", "steam-generator", "turbine", "generator", "condenser", "cooling-tower"],
+                flows: ["primary", "secondary", "cooling"],
+                arrows: []
+            }
+        ];
+        
+        let activeFlows = [];
+        
+        // Update the animation to the current step
+        function updateStep() {
+            // Update title and description
+            document.getElementById('step-title').textContent = steps[currentStep].title;
+            document.getElementById('step-description').textContent = steps[currentStep].description;
+            
+            // Reset all component highlights
+            const components = document.querySelectorAll('.component');
+            components.forEach(component => {
+                component.classList.remove('highlight');
+            });
+            
+            // Add highlights to active components
+            steps[currentStep].highlight.forEach(id => {
+                document.getElementById(id).classList.add('highlight');
+            });
+            
+            // Hide all arrows
+            const arrows = document.querySelectorAll('.arrow');
+            arrows.forEach(arrow => {
+                arrow.style.display = 'none';
+            });
+            
+            // Show active arrows
+            steps[currentStep].arrows.forEach(id => {
+                document.getElementById(id).style.display = 'block';
+            });
+            
+            // Update active flows
+            activeFlows = steps[currentStep].flows;
+            
+            // Update parameter boxes
+            if (parameterAnnotations[currentStep]) {
+                createParameterBoxes(parameterAnnotations[currentStep]);
+            } else {
+                document.getElementById('parameter-boxes').innerHTML = '';
+            }
+            
+            // Update button states
+            document.getElementById('prev-btn').disabled = (currentStep === 0);
+            document.getElementById('next-btn').disabled = (currentStep === steps.length - 1);
+        }
+        
+        // Initialize animation
+        function init() {
+            createParticles();
+            updateStep();
+            
+            // Start animation loop
+            animationLoop();
+        }
+        
+        // Animation loop
+        function animationLoop() {
+            updateParticles();
+            requestAnimationFrame(animationLoop);
+        }
+        
+        // Event listeners
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateStep();
+            }
+        });
+        
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateStep();
+            }
+        });
+        
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (isPlaying) {
+                // Stop auto play
+                clearInterval(animationInterval);
+                document.getElementById('play-btn').textContent = 'Play';
+                isPlaying = false;
+            } else {
+                // Start auto play
+                animationInterval = setInterval(() => {
+                    if (currentStep < steps.length - 1) {
+                        currentStep++;
+                    } else {
+                        currentStep = 0;
+                    }
+                    updateStep();
+                }, 3000);
+                document.getElementById('play-btn').textContent = 'Pause';
+                isPlaying = true;
+            }
+        });
+        
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
